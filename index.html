@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Yousef Detector">
+<meta name="theme-color" content="#F3F3F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0E0E" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>*,*::before,*::after{box-sizing:border-box}:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Yousef Detector</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Major+Mono+Display&family=Gruppo&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow column like a tuner's readout — reference Hz first, then strings, maqam, and the pitch-stability strip */
+:root{
+  --bg:#F3F3F2; --surface:#FFFFFF; --sunk:#EAEAE8; --ink:#141414; --muted:#5E5E5E; --line:#DCDCDA; --accent:#141414; --accent-ink:#FFFFFF; --warm:#C0392B; --warn:#C0392B;
+  --f-display:"Amiri","Noto Naskh Arabic","Geeza Pro",serif;
+  --f-body:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E0E0E; --surface:#191919; --sunk:#121212; --ink:#EDEDED; --muted:#A0A0A0; --line:#2C2C2C; --accent:#EDEDED; --accent-ink:#111111; --warm:#FF6B5B; --warn:#FF6B5B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0E0E; --surface:#191919; --sunk:#121212; --ink:#EDEDED; --muted:#A0A0A0; --line:#2C2C2C; --accent:#EDEDED; --accent-ink:#111111; --warm:#FF6B5B; --warn:#FF6B5B; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:17px;line-height:1.55;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:430px;margin:0 auto;padding-block:14px calc(150px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+bdi.n,.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.brand{font-family:"Major Mono Display",var(--f-num);font-weight:400;font-size:clamp(1.6rem,8vw,2.1rem);letter-spacing:-.01em;direction:ltr;text-align:left;margin:4px 0 0;line-height:1.15}
+.tagline{font-family:"Gruppo",var(--f-body);font-size:1.15rem;letter-spacing:.06em;color:var(--muted);direction:ltr;text-align:left;margin:2px 0 0;line-height:1.3}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.9rem;line-height:1.2;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.35rem;margin:0;line-height:1.3}
+.sub{color:var(--muted);margin:2px 0 0;font-size:.95rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pick{position:fixed;inset:auto 0 0 0;z-index:5;background:var(--surface);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;padding-top:12px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pick.panel{border-radius:0;border-inline:0;border-bottom:0}
+.pick>*{width:100%;max-width:398px;margin-inline:auto}
+.pick .status{font-size:.85rem;line-height:1.45;text-align:center}
+.btn{appearance:none;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);font:600 1.06rem var(--f-body);min-height:52px;padding:12px 16px;cursor:pointer;text-align:center}
+.btn:focus-visible,.play:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.btn[disabled]{opacity:.55;cursor:default}
+input[type=file]{position:absolute;inline-size:1px;block-size:1px;opacity:0;pointer-events:none}
+.status{font-size:.92rem;color:var(--muted);margin:0}
+.status.err{color:var(--warn)}
+.bar{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.tag{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:.8rem;letter-spacing:.02em;padding:3px 10px;border-radius:99px;background:var(--sunk);color:var(--muted)}
+.tag.live{color:var(--accent)}
+/* readout */
+.readout{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 12px 16px;text-align:center}
+.readout .lbl{color:var(--muted);font-size:.95rem}
+.big{font-family:var(--f-num);font-weight:600;font-size:clamp(3rem,17vw,4.4rem);line-height:1;letter-spacing:-.02em;direction:ltr}
+.big small{font-size:.32em;font-weight:500;color:var(--muted);letter-spacing:0;margin-inline-start:.3em}
+.cents{font-size:1rem}
+.cents b{color:var(--accent);font-weight:600}
+.meta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;color:var(--muted);font-size:.88rem}
+/* strings */
+.strings{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.strings li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;min-height:56px;padding:6px 0;border-top:1px solid var(--line)}
+.strings li:first-child{border-top:0}
+.sname{min-width:0}
+.sname b{display:block;font-weight:600}
+.sname span{color:var(--muted);font-size:.88rem}
+.hz{font-family:var(--f-num);font-weight:600;font-size:1.45rem;direction:ltr;font-variant-numeric:tabular-nums}
+.hz small{font-size:.6em;color:var(--muted);font-weight:500;margin-inline-start:4px}
+.strings li.tonic .hz{color:var(--warm)}
+.play{appearance:none;border:1px solid var(--line);background:var(--sunk);color:var(--ink);width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.play svg{width:16px;height:16px;fill:currentColor}
+.play.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.row{display:flex;flex-direction:column;gap:6px}
+label{font-weight:600}
+select{font:500 1rem var(--f-body);min-height:48px;color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px;width:100%}
+.finger{display:flex;flex-direction:column;gap:2px;background:var(--sunk);border-radius:10px;padding:12px}
+.finger b{font-family:var(--f-display);font-size:1.5rem;color:var(--warm);line-height:1.3}
+.finger span{color:var(--muted);font-size:.9rem}
+/* maqam */
+.maqam{display:flex;flex-direction:column;gap:4px}
+.maqam .name{font-family:var(--f-display);font-weight:700;font-size:2.1rem;line-height:1.25;color:var(--warm)}
+.alts{margin:0;padding:0 1.6em 0 0;list-style:arabic-indic;color:var(--muted);font-size:.92rem}
+.note{color:var(--muted);font-size:.88rem;margin:0}
+/* stability chart */
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--f-num);font-size:12px}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .ref{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3}
+.chart .dot{fill:var(--accent)}
+.chart .dot.out{fill:var(--warn)}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <h1 class="brand">Yousef Detector</h1>
+    <p class="tagline">Pitch &amp; Tuning Reference</p>
+  </header>
+
+  <section class="panel pick" aria-label="اختيار الملف">
+    <input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.mov,.mp4">
+    <button class="btn" id="pickBtn" type="button">اختر ملف أغنية أو فيديو</button>
+    <div class="bar" id="bar" hidden><i id="barFill"></i></div>
+    <p class="status" id="status">التحليل يتم على جهازك، ولا يُرفع الملف لأي مكان.</p>
+  </section>
+
+  <span class="tag" id="srcTag">مثال محفوظ: أجهلك، عبادي الجوهر</span>
+
+  <section class="panel readout" aria-label="المرجع">
+    <span class="lbl">مرجع التسجيل (نغمة لا)</span>
+    <div class="big" id="refHz">445.3<small>Hz</small></div>
+    <div class="cents" id="centsLine"></div>
+    <div class="meta" id="metaLine"></div>
+  </section>
+
+  <section class="panel" aria-label="ترددات الأوتار">
+    <h2>أوتار العود</h2>
+    <div class="row">
+      <label for="lower">دوزان العود</label>
+      <select id="lower"></select>
+    </div>
+    <ul class="strings" id="strings"></ul>
+    <div class="finger" id="finger"></div>
+  </section>
+
+  <section class="panel" aria-label="المقام">
+    <h2>المقام</h2>
+    <div class="maqam">
+      <div class="name" id="mqName"></div>
+      <div id="mqLine"></div>
+    </div>
+    <ol class="alts" id="mqAlts"></ol>
+    <p class="note">تقدير المقام تقريبي، ويعتمد على النغمات الأكثر حضورًا في التسجيل كله. الأغاني التي تتنقل بين مقامات كثيرة قد تُظهر مقامًا من وسطها.</p>
+  </section>
+
+  <section class="panel" aria-label="ثبات الطبقة">
+    <h2>ثبات الطبقة عبر التسجيل</h2>
+    <svg class="chart" id="chart" viewBox="0 0 520 150" role="img" aria-label="انحراف الطبقة لكل ثلاثين ثانية"></svg>
+    <p class="note" id="chartNote"></p>
+  </section>
+</div>
+
+<script>
+// ===== Core analysis (pure; runs in browser and node) =====
+const CORE = (() => {
+  const SR = 16000, N = 8192, HOP = 4096;
+  const NOTE24 = ['دو','دو نصف دييز','دو دييز','ري نصف بيمول','ري','ري نصف دييز','مي بيمول','مي نصف بيمول','مي','فا نصف بيمول','فا','فا نصف دييز','فا دييز','صول نصف بيمول','صول','صول نصف دييز','لا بيمول','لا نصف بيمول','لا','لا نصف دييز','سي بيمول','سي نصف بيمول','سي','دو نصف بيمول'];
+  const DEGREE = {0:'الراست',4:'الدوكاه',6:'الكرد',7:'السيكاه',10:'الجهاركاه',12:'الحجاز',14:'النوا',18:'الحسيني',20:'العجم',21:'الأوج',22:'الماهور'};
+  // maqam templates in quarter-tone steps from tonic: req = core degrees, opt = allowed variants
+  const MAQAMAT = [
+    {name:'عجم',     req:[0,4,8,10,14,18,22], opt:[]},
+    {name:'نهاوند',  req:[0,4,6,10,14,16],    opt:[20,22]},
+    {name:'كرد',     req:[0,2,6,10,14,16,20], opt:[]},
+    {name:'حجاز',    req:[0,2,8,10,14],       opt:[16,18,20]},
+    {name:'حجاز كار',req:[0,2,8,10,14,16,22], opt:[]},
+    {name:'راست',    req:[0,4,7,10,14,18],    opt:[20,21]},
+    {name:'بياتي',   req:[0,3,6,10,14,16,20], opt:[18]},
+    {name:'صبا',     req:[0,3,6,8,14,16,20],  opt:[12]},
+    {name:'سيكاه',   req:[0,3,7,11,14,17,21], opt:[]},
+  ];
+  // oud strings (eastern C-F-A-D-G-C), standard Hz at A=440
+  const STRINGS = [
+    {name:'وتر القرار', note:'دو', f:65.406},
+    {name:'وتر اليكاه', note:'فا', f:87.307},
+    {name:'وتر العشيران', note:'لا', f:110.0},
+    {name:'وتر الدوكاه', note:'ري', f:146.832},
+    {name:'وتر النوا', note:'صول', f:195.998},
+    {name:'وتر الكردان', note:'دو', f:261.626},
+  ];
+
+  function fft(re, im) {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let cr = 1, ci = 0;
+        for (let k = 0; k < len / 2; k++) {
+          const a = i + k, b = a + len / 2;
+          const xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+          re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+          const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
+        }
+      }
+    }
+  }
+
+  // Step 1: frame peaks. Returns async-friendly generator via callback chunks.
+  async function extractPeaks(x, onProgress) {
+    const win = new Float64Array(N);
+    for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+    const nFrames = Math.max(0, Math.floor((x.length - N) / HOP) + 1);
+    const re = new Float64Array(N), im = new Float64Array(N);
+    const lo = Math.floor(85 * N / SR), hi = Math.ceil(1500 * N / SR);
+    const mag = new Float64Array(hi + 2);
+    const frames = []; // {t, max, peaks:[[cents,w],...]}
+    for (let j = 0; j < nFrames; j++) {
+      const off = j * HOP;
+      for (let i = 0; i < N; i++) { re[i] = x[off + i] * win[i]; im[i] = 0; }
+      fft(re, im);
+      let mx = 0;
+      for (let k = lo - 1; k <= hi + 1; k++) { const m = Math.hypot(re[k], im[k]); mag[k] = m; if (m > mx) mx = m; }
+      const peaks = [];
+      if (mx > 0) {
+        const th = mx * 0.15;
+        for (let k = lo; k <= hi; k++) {
+          const m = mag[k];
+          if (m < th || m < mag[k - 1] || m < mag[k + 1]) continue;
+          const a = Math.log(mag[k - 1] + 1e-12), b = Math.log(m + 1e-12), c = Math.log(mag[k + 1] + 1e-12);
+          const den = a - 2 * b + c, d = den !== 0 ? 0.5 * (a - c) / den : 0;
+          const f = (k + d) * SR / N;
+          peaks.push([1200 * Math.log2(f / 440), m]);
+        }
+      }
+      frames.push({ t: (off + N / 2) / SR, max: mx, peaks });
+      if (onProgress && j % 40 === 0) { onProgress(j / nFrames); await new Promise(r => setTimeout(r, 0)); }
+    }
+    return frames;
+  }
+
+  function circSmooth(h, sigma) {
+    const L = h.length, R = Math.ceil(sigma * 3), out = new Float64Array(L);
+    const k = []; for (let i = -R; i <= R; i++) k.push(Math.exp(-0.5 * (i / sigma) ** 2));
+    for (let i = 0; i < L; i++) { let s = 0; for (let r = -R; r <= R; r++) s += h[((i + r) % L + L) % L] * k[r + R]; out[i] = s; }
+    return out;
+  }
+  function offsetOf(h100) {
+    const s = circSmooth(h100, 4);
+    let best = 0; for (let i = 1; i < 100; i++) if (s[i] > s[best]) best = i;
+    // refine: circular weighted mean within ±12
+    let sw = 0, sx = 0;
+    for (let r = -12; r <= 12; r++) { const w = h100[((best + r) % 100 + 100) % 100]; sw += w; sx += w * r; }
+    let o = best + (sw > 0 ? sx / sw : 0);
+    o = ((o % 100) + 100) % 100; if (o >= 50) o -= 100;
+    return o;
+  }
+
+  function analyze(frames) {
+    // energy gate: ignore near-silent frames
+    const mx = frames.map(f => f.max).filter(v => v > 0).sort((a, b) => a - b);
+    const gate = mx.length ? mx[Math.floor(mx.length * 0.9)] * 0.05 : 0;
+    const act = frames.filter(f => f.max >= gate && f.peaks.length);
+    if (act.length < 20) return null;
+    const h100 = new Float64Array(100);
+    for (const f of act) for (const [c, w] of f.peaks) h100[((Math.round(c) % 100) + 100) % 100] += w;
+    const offset = offsetOf(h100);
+    // per-30s windows for stability
+    const dur = frames[frames.length - 1].t;
+    const windows = [];
+    for (let s = 0; s < dur; s += 30) {
+      const h = new Float64Array(100); let n = 0;
+      for (const f of act) if (f.t >= s && f.t < s + 30) { n++; for (const [c, w] of f.peaks) h[((Math.round(c) % 100) + 100) % 100] += w; }
+      if (n >= 10) windows.push({ start: s, end: Math.min(s + 30, dur), offset: offsetOf(h) });
+    }
+    const near = windows.filter(w => Math.abs(w.offset - offset) <= 8);
+    const outliers = windows.filter(w => Math.abs(w.offset - offset) > 8);
+    // quarter-tone pitch-class histogram from C, relative to measured tuning
+    const toBin = c => ((Math.round((c - offset + 900) / 50) % 24) + 24) % 24;
+    const H = new Float64Array(24), F = new Float64Array(24);
+    for (const f of act) for (const [c, w] of f.peaks) H[toBin(c)] += w;
+    const tail = act.filter(f => f.t >= act[act.length - 1].t - 20);
+    for (const f of tail) for (const [c, w] of f.peaks) F[toBin(c)] += w;
+    const norm = a => { const srt = Array.from(a).sort((p, q) => p - q), med = srt[12]; const b = Array.from(a, v => Math.max(0, v - med)); const s = b.reduce((p, q) => p + q, 0) || 1; return b.map(v => v / s); };
+    const Hn = norm(H), Fn = norm(F);
+    const Hmax = Math.max(...Hn), Fmax = Math.max(...Fn);
+    const cands = [];
+    for (const m of MAQAMAT) for (let t = 0; t < 24; t++) {
+      const inSet = new Set([...m.req, ...m.opt].map(d => (t + d) % 24));
+      let cover = 0, outside = 0, missing = 0;
+      for (let b = 0; b < 24; b++) (inSet.has(b) ? (cover += Hn[b]) : (outside += Hn[b]));
+      for (const d of m.req) if (Hn[(t + d) % 24] < Hmax * 0.12) missing++;
+      const fifth = Hn[(t + 14) % 24] / Hmax;
+      const score = cover - 1.2 * outside - 0.12 * missing + 0.2 * (Fn[t] / (Fmax || 1)) + 0.25 * (Hn[t] / Hmax) + 0.2 * fifth;
+      cands.push({ maqam: m.name, tonic: t, score });
+    }
+    cands.sort((a, b) => b.score - a.score);
+    const top = []; for (const c of cands) { if (!top.some(x => x.maqam === c.maqam && x.tonic === c.tonic)) top.push(c); if (top.length >= 3) break; }
+    return { offset, ref: 440 * 2 ** (offset / 1200), windows, near: near.length, outliers, dur, hist: Hn, top };
+  }
+
+  function tonicHz(bin, offset) {
+    let c = bin * 50 - 900 + offset; // cents from A4 (bin from C4)
+    let f = 440 * 2 ** (c / 1200);
+    while (f >= 330) f /= 2; while (f < 165) f *= 2;
+    return f;
+  }
+
+  return { SR, NOTE24, DEGREE, MAQAMAT, STRINGS, extractPeaks, analyze, tonicHz };
+})();
+
+
+</script>
+<script>
+(() => {
+const EXAMPLE = {"offset":20.841028860302174,"ref":445.32884074985645,"windows":[{"start":0,"end":30,"offset":22.1},{"start":30,"end":60,"offset":21.2},{"start":60,"end":90,"offset":21},{"start":90,"end":120,"offset":21.1},{"start":120,"end":150,"offset":21.1},{"start":150,"end":180,"offset":21.5},{"start":180,"end":210,"offset":21.8},{"start":210,"end":240,"offset":21.7},{"start":240,"end":270,"offset":20.7},{"start":270,"end":300,"offset":20},{"start":300,"end":330,"offset":20},{"start":330,"end":360,"offset":19.7},{"start":360,"end":390,"offset":17.5},{"start":390,"end":420,"offset":20.9},{"start":420,"end":450,"offset":19.6},{"start":450,"end":480,"offset":22},{"start":480,"end":510,"offset":20.1},{"start":510,"end":540,"offset":-3.5},{"start":540,"end":570,"offset":19.3},{"start":570,"end":600,"offset":-3.7},{"start":600,"end":630,"offset":19.5},{"start":630,"end":660,"offset":20.3},{"start":660,"end":690,"offset":20.2},{"start":690,"end":720,"offset":20.8},{"start":720,"end":750,"offset":20.7},{"start":750,"end":780,"offset":20},{"start":780,"end":810,"offset":20},{"start":810,"end":840,"offset":19.8},{"start":840,"end":864,"offset":20.8}],"near":27,"outliers":[{"start":510,"end":540,"offset":-3.5},{"start":570,"end":600,"offset":-3.7}],"dur":864,"hist":[0.178,0,0,0,0.0334,0,0.0558,0,0,0,0.3014,0,0,0.0153,0.0682,0,0.0069,0,0.0556,0,0.2551,0.0022,0.028,0],"top":[{"maqam":"عجم","tonic":20,"score":1.376},{"maqam":"راست","tonic":20,"score":1.196},{"maqam":"حجاز","tonic":10,"score":1.124}]};
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1) => v.toFixed(d);
+const sign = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1);
+const LOWER = ['بدون خفض','خفض ربع تون','خفض نصف تون','خفض تون إلا ربع','خفض تون','خفض تون وربع','خفض تون ونصف','خفض تونين إلا ربع','خفض تونين','خفض تونين وربع','خفض تونين ونصف','خفض ثلاثة تونات إلا ربع','خفض ثلاثة تونات'];
+let R = EXAMPLE;
+
+function mmss(s){ s = Math.round(s); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+function noteName(bin){ const d = CORE.DEGREE[bin]; return CORE.NOTE24[bin] + (d ? ' (' + d + ')' : ''); }
+
+function fillLower(){
+  const sel = $('lower'), keep = +sel.value || 0;
+  sel.innerHTML = '';
+  LOWER.forEach((txt, q) => {
+    const o = document.createElement('option');
+    o.value = q;
+    o.textContent = txt + ' — المرجع ' + fmt(R.ref * 2 ** (-q * 50 / 1200));
+    sel.appendChild(o);
+  });
+  sel.value = keep;
+}
+
+function renderStrings(){
+  const q = +$('lower').value || 0;
+  const k = 2 ** ((R.offset - q * 50) / 1200);
+  const top = R.top[0];
+  const fingerBin = ((top.tonic + q) % 24 + 24) % 24;
+  const ul = $('strings'); ul.innerHTML = '';
+  CORE.STRINGS.forEach((s, i) => {
+    const f = s.f * k;
+    const li = document.createElement('li');
+    // highlight the open string whose note matches the fingering tonic
+    const stdBin = {'دو':0,'فا':10,'لا':18,'ري':4,'صول':14}[s.note];
+    if (stdBin === fingerBin) li.className = 'tonic';
+    li.innerHTML = '<div class="sname"><b>' + s.name + '</b><span>' + s.note + '</span></div>' +
+      '<div class="hz">' + fmt(f) + '<small>Hz</small></div>' +
+      '<button class="play" type="button" aria-label="استمع إلى ' + s.name + '"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg></button>';
+    li.querySelector('.play').addEventListener('click', e => playTone(f, e.currentTarget));
+    ul.appendChild(li);
+  });
+  const sounding = noteName(top.tonic);
+  $('finger').innerHTML = q === 0
+    ? '<span>تعزف المقام من حرف</span><b>' + CORE.NOTE24[top.tonic] + '</b><span>العود مضبوط على طبقة التسجيل نفسها، فالحرف على الزند هو الصوت المسموع.</span>'
+    : '<span>بهذا الدوزان تعزف من حرف</span><b>' + CORE.NOTE24[fingerBin] + '</b><span>والصوت المسموع ' + sounding + '، مطابق للتسجيل دون أي تعديل عليه.</span>';
+}
+
+function render(){
+  $('refHz').innerHTML = fmt(R.ref) + '<small>Hz</small>';
+  if (R.offset < 0) $('centsLine').innerHTML = 'أخفض من <bdi class="n">440</bdi> بمقدار <b><bdi class="n">' + Math.abs(R.offset).toFixed(1) + '</bdi> سنت</b>';
+  else $('centsLine').innerHTML = 'أعلى من <bdi class="n">440</bdi> بمقدار <b><bdi class="n">' + R.offset.toFixed(1) + '</bdi> سنت</b>';
+  const stable = R.windows.length ? Math.round(100 * R.near / R.windows.length) : 0;
+  $('metaLine').innerHTML = '<span>مدة التحليل <bdi class="n">' + mmss(R.dur) + '</bdi></span><span>الطبقة ثابتة في <bdi class="n">' + R.near + '</bdi> من <bdi class="n">' + R.windows.length + '</bdi> مقطعًا</span>';
+  fillLower(); renderStrings();
+  const t = R.top[0];
+  $('mqName').textContent = t.maqam + ' ' + CORE.NOTE24[t.tonic];
+  $('mqLine').innerHTML = 'درجة الأساس ' + noteName(t.tonic) + '، وترددها <bdi class="n">' + fmt(CORE.tonicHz(t.tonic, R.offset)) + '</bdi> هيرتز';
+  $('mqAlts').innerHTML = R.top.slice(1).map(a => '<li>احتمال آخر: ' + a.maqam + ' ' + CORE.NOTE24[a.tonic] + '</li>').join('');
+  drawChart();
+}
+
+function drawChart(){
+  const svg = $('chart'), W = 520, H = 150, L = 34, Rm = 10, T = 12, B = 26;
+  const ws = R.windows; if (!ws.length) { svg.innerHTML = ''; return; }
+  const lo = Math.floor((R.offset - 30) / 10) * 10, hi = lo + 60;
+  const x = t => L + (W - L - Rm) * (t / Math.max(R.dur, 1));
+  const y = c => T + (H - T - B) * (1 - (Math.max(lo, Math.min(hi, c)) - lo) / (hi - lo));
+  let s = '';
+  for (let c = lo; c <= hi; c += 20) s += '<line class="grid" x1="' + L + '" x2="' + (W - Rm) + '" y1="' + y(c) + '" y2="' + y(c) + '"/><text x="' + (L - 6) + '" y="' + (y(c) + 3) + '" text-anchor="end">' + (c > 0 ? '+' : '') + c + '</text>';
+  s += '<line class="ref" x1="' + L + '" x2="' + (W - Rm) + '" y1="' + y(R.offset) + '" y2="' + y(R.offset) + '"/>';
+  const ticks = 4; for (let i = 0; i <= ticks; i++) { const tt = R.dur * i / ticks; s += '<text x="' + x(tt) + '" y="' + (H - 8) + '" text-anchor="' + (i === 0 ? 'start' : i === ticks ? 'end' : 'middle') + '">' + mmss(tt) + '</text>'; }
+  ws.forEach(w => { const out = Math.abs(w.offset - R.offset) > 8; s += '<circle class="dot' + (out ? ' out' : '') + '" cx="' + x((w.start + w.end) / 2) + '" cy="' + y(w.offset) + '" r="4.5"/>'; });
+  svg.innerHTML = s;
+  const outs = R.outliers || [];
+  $('chartNote').innerHTML = 'كل نقطة تمثل <bdi class="n">30</bdi> ثانية، والخط المتقطع هو الانحراف المعتمد بالسنت عن <bdi class="n">440</bdi>. ' +
+    (outs.length ? 'النقاط البرتقالية مقاطع ابتعد قياسها، وغالبًا سببها تحوّل إلى مقام فيه أرباع تون، وليس تغيّرًا في طبقة التسجيل.' : 'الطبقة ثابتة في كل المقاطع.');
+}
+
+// ---- reference tone playback (soft, no clicks) ----
+let actx = null, cur = null;
+function playTone(f, btn){
+  if (!(window.AudioContext || window.webkitAudioContext)) { setStatus('تشغيل نغمة الوتر غير متاح في هذا المتصفح. افتح التطبيق من رابطه في Safari، وتأكد أن «وضع القفل» غير مفعّل لهذا الموقع.', true); return; }
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    if (cur) { try { cur.stop(); } catch(e){} cur.btn && cur.btn.classList.remove('on'); }
+    const now = actx.currentTime, dur = 3.2, g = actx.createGain();
+    g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.5, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    g.connect(actx.destination);
+    const oscs = [[1, 1], [2, 0.35], [3, 0.15]].map(([h, a]) => {
+      const o = actx.createOscillator(), og = actx.createGain();
+      o.frequency.value = f * h; og.gain.value = a; o.connect(og); og.connect(g); o.start(now); o.stop(now + dur + 0.05); return o;
+    });
+    btn.classList.add('on');
+    cur = { stop: () => oscs.forEach(o => o.stop()), btn };
+    oscs[0].onended = () => btn.classList.remove('on');
+  } catch (e) { setStatus('تعذّر تشغيل الصوت في هذا المتصفح.', true); }
+}
+
+// ---- file analysis ----
+function setStatus(t, err){ const s = $('status'); s.textContent = t; s.classList.toggle('err', !!err); }
+function setBar(p){ $('bar').hidden = p == null; $('barFill').style.width = Math.round((p || 0) * 100) + '%'; }
+
+function decode(ctx, buf){
+  return new Promise((res, rej) => { const p = ctx.decodeAudioData(buf, res, rej); if (p && p.then) p.then(res, rej); });
+}
+async function toMono16k(ab){
+  const target = CORE.SR;
+  try {
+    const off = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.ceil(ab.duration * target), target);
+    const src = off.createBufferSource(); src.buffer = ab; src.connect(off.destination); src.start();
+    const out = await off.startRendering();
+    return out.getChannelData(0);
+  } catch (e) {
+    // fallback: downmix + box-filter + linear resample
+    const n = ab.length, ch = ab.numberOfChannels, mono = new Float32Array(n);
+    for (let c = 0; c < ch; c++) { const d = ab.getChannelData(c); for (let i = 0; i < n; i++) mono[i] += d[i] / ch; }
+    const ratio = ab.sampleRate / target, m = Math.floor(n / ratio), out = new Float32Array(m), w = Math.max(1, Math.round(ratio));
+    for (let i = 0; i < m; i++) { const p = i * ratio, a = Math.floor(p); let s = 0, k = 0; for (let j = a; j < a + w && j < n; j++) { s += mono[j]; k++; } out[i] = k ? s / k : 0; }
+    return out;
+  }
+}
+
+async function handle(file){
+  $('pickBtn').disabled = true; setBar(0);
+  try {
+    if (!(window.AudioContext || window.webkitAudioContext)) throw new Error('هذا المتصفح لا يتيح خاصية الصوت، فلا يستطيع التطبيق قراءة الملف. افتح التطبيق من رابطه في Safari وليس من معاينة تطبيق «الملفات» أو متصفح تطبيق آخر. وإن كان «وضع القفل» مفعّلًا في الآيفون، فأوقفه لهذا الموقع من زر «ألف باء» في شريط العنوان ثم «إعدادات الموقع».');
+    setStatus('جارٍ فتح الملف…');
+    const buf = await file.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let ab;
+    try { ab = await decode(ctx, buf); }
+    catch (e) { throw new Error('لم أستطع قراءة الصوت من هذا الملف. جرّب ملفًا صوتيًا بصيغة mp3 أو m4a.'); }
+    finally { ctx.close && ctx.close(); }
+    if (ab.duration < 15) throw new Error('الملف قصير جدًا. ارفع مقطعًا مدته دقيقة على الأقل لقياس دقيق.');
+    setStatus('جارٍ تجهيز الصوت…');
+    const x = await toMono16k(ab);
+    setStatus('جارٍ التحليل…');
+    const frames = await CORE.extractPeaks(x, p => { setBar(p); setStatus('جارٍ التحليل… ' + Math.round(p * 100) + '٪'); });
+    const res = CORE.analyze(frames);
+    if (!res) throw new Error('لم أجد نغمات واضحة كافية في الملف. تأكد أن فيه موسيقى مسموعة.');
+    R = res; render();
+    $('srcTag').textContent = 'الملف: ' + file.name; $('srcTag').classList.add('live');
+    setStatus('اكتمل التحليل.');
+  } catch (e) {
+    setStatus(e.message || 'حدث خطأ أثناء التحليل.', true);
+  } finally { setBar(null); $('pickBtn').disabled = false; $('file').value = ''; }
+}
+
+$('pickBtn').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) handle(f); });
+$('lower').addEventListener('change', renderStrings);
+render();
+})();
+</script>
+
+</body>
+</html>
